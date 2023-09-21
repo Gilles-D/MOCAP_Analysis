@@ -82,16 +82,16 @@
 % 	20-09-202
 
 
-function [mean_angle_unweighted_deg, mean_magnitude, beh_phase, n_events] = plot_phase_of_reponse(obs, pred, title_label, rendering, ref_phase, time)
+function [mean_angle_unweighted_deg, mean_magnitude, beh_phase, n_events] = plot_phase_of_reponse(obs, pred, title_label, rendering, ref_phase, time, save_path,unit_label)
     % Initialize defaults
     if nargin < 6 || isempty(time)
         time = 1:numel(obs);
     end
     n_events = [];
 
-    % Compute the analytic signal and phase
-    analyticSignal = hilbert(obs);
+    % Compute the analytic signal and phase    
     if nargin < 5 || isempty(ref_phase)
+        analyticSignal = hilbert(obs);
         beh_phase                   = angle(analyticSignal);
         mean_angle_unweighted_deg   = [];
         mean_magnitude                 = [];
@@ -103,7 +103,7 @@ function [mean_angle_unweighted_deg, mean_magnitude, beh_phase, n_events] = plot
     angles = rad2deg(beh_phase);
     
     if all(sign(diff(pred(~isnan(pred)))) >= 0)
-        [mean_magnitude, mean_angle, n_events] = processSpikeTimes(pred, beh_phase, time, title_label, rendering);
+        [mean_magnitude, mean_angle, n_events] = processSpikeTimes(pred, beh_phase, time, title_label, rendering, save_path,unit_label);
     else
         mean_magnitude = processSignalPeaks(pred, angles, title_label, rendering);
     end
@@ -119,25 +119,25 @@ function mean_angle_unweighted_deg = calculateMeanAngle(angles, pred)
 end
 
 % Process spike times and plot the polar histogram
-function [mean_magnitude, mean_angle, n_events] = processSpikeTimes(pred, ref_phase, time, title_label, rendering)
+function [mean_magnitude, mean_angle, n_events] = processSpikeTimes(pred, ref_phase, time, title_label, rendering,save_path,unit_label)
     spike_times         = pred(1:find(~isnan(pred), 1, 'last'));
     nearest_indices     = nearestIndices(time, spike_times);
     n_events            = numel(nearest_indices);
     spike_phases        = ref_phase(nearest_indices);
 
     if rendering
-        [mean_magnitude, mean_angle] = plotPolarHistogram(spike_phases, title_label);
+        [mean_magnitude, mean_angle] = plotPolarHistogram(spike_phases, title_label,save_path,unit_label);
     end
 end
 
 % Process signal peaks
-function mean_length = processSignalPeaks(pred, angles, title_label, rendering)
+function mean_length = processSignalPeaks(pred, angles, title_label, rendering,save_path,unit_label)
     [v, t_pk] = findpeaks(pred, 'MinPeakProminence', 10);
     pred = pred(t_pk);
     angles = angles(t_pk);
 
     if rendering
-        mean_length = plotPolarPlot(angles, pred, title_label);
+        mean_length = plotPolarPlot(angles, pred, title_label,save_path,unit_label);
     else
         mean_length = nanmean(pred);
     end
@@ -151,7 +151,7 @@ function nearest_indices = nearestIndices(time, spike_times)
 end
 
 % Create polar histogram and calculate mean length
-function [mean_magnitude, mean_angle] = plotPolarHistogram(spike_phases, title_label)
+function [mean_magnitude, mean_angle] = plotPolarHistogram(spike_phases, title_label, save_path,unit_label)
     figure(667);clf();
     num_bins = 18;
 
@@ -174,13 +174,24 @@ function [mean_magnitude, mean_angle] = plotPolarHistogram(spike_phases, title_l
 
     % Plot the mean vector
     polarplot([0, mean_angle], [0, mean_magnitude], 'r-', 'LineWidth', 2);  % Red arrow for average vector
-
+    
+    pax = gca;  % 
+    pax.RLim = [0 0.5];  % Define radial limits of the plot
+    
+    
     hold off;  % Release the hold
+    
+    % Save figure
+    if ~isempty(save_path)
+        label = strrep(unit_label, '\', '');
+        filename = fullfile(save_path, ['PolarHistogram_', label, '.png']);
+        saveas(gcf, filename, 'png');
+    end
 end
 
 
 % Create polar plot and calculate mean length
-function mean_length = plotPolarPlot(angles, pred, title_label)
+function mean_length = plotPolarPlot(angles, pred, title_label,save_path,unit_label)
     figure();
     polarplot(angles, pred, 'o-');
     title(['Event as a function of behavioural Phase, ', title_label, 'elated cell']);
@@ -190,4 +201,14 @@ function mean_length = plotPolarPlot(angles, pred, title_label)
     mean_length = sqrt(mean_vector_x^2 + mean_vector_y^2);
 
     polarplot([0, atan2d(mean_vector_y, mean_vector_x)], [0, mean_length], 'r-', 'LineWidth', 2);
+    
+    pax = gca;  % 
+    pax.RLim = [0 0.5];  % Define radial limits of the plot
+    
+    % Save figure
+    if ~isempty(save_path)
+        label = strrep(unit_label, '\', '');
+        filename = fullfile(save_path, ['PolarPlot_', label, '.png']);
+        saveas(gcf, filename, 'png');
+    end
 end
