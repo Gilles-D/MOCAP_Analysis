@@ -34,6 +34,13 @@
 %   all_y_data(Vector) Double - Optional:
 %       Vector containing all y-coordinate data points to be plotted as scatter.
 %
+%   x_ref(STR):
+%       The label used to compute a vector representing the x-coordinate
+%       of the mouse at each time  point in 'time_axis'.
+%
+%   y_ref(STR):
+%       The label used to compute a vector representing the y-coordinate
+%       of the mouse at each time  point in 'time_axis'.
 % -------------------------------------------------------------------------
 %% Outputs:
 % 	out(Matrix) Double:
@@ -74,17 +81,17 @@
 % See also: 
 %	ksdensity
 
-function out = kde(x_data, y_data, rendering, x_range, y_range, all_x_data, all_y_data, unit_label)
+function out = kde(x_data, y_data, rendering, x_range, y_range, all_x_data, all_y_data, unit_label, x_ref, y_ref)
     %% Validate input arguments
     % Check if rendering flag, x_range and y_range are provided. If not, set defaults.
     if nargin < 3 || isempty(rendering)
         rendering = false                        ;
     end
     if nargin < 4 || isempty(x_range)
-        x_range = [-(max(abs(all_x_data))), max(all_x_data)] ;
+        x_range = [min(all_x_data), max(all_x_data)] ;
     end
     if nargin < 5 || isempty(y_range)
-        y_range = [-(max(abs(all_y_data))), (max(abs(all_y_data)))] ;
+        y_range = [min(all_y_data), max(all_y_data)] ;
     end
 
     %% Create a grid for the KDE
@@ -104,7 +111,7 @@ function out = kde(x_data, y_data, rendering, x_range, y_range, all_x_data, all_
 
     %% Perform the KDE on the data
     % Utilize the 'ksdensity' function to compute the density
-    [pdf_val, xi] = ksdensity([x_data(:), y_data(:)], [X_flat, Y_flat]) ;
+    [pdf_val, xi] = ksdensity([x_data(:), y_data(:)], [X_flat, Y_flat]);%, 'Bandwidth',5) ;
 
     %% Reshape the density to match the grid size
     Z = reshape(pdf_val, length(y_lin), length(x_lin)) ;
@@ -112,13 +119,14 @@ function out = kde(x_data, y_data, rendering, x_range, y_range, all_x_data, all_
     %% Optionally render the KDE
     % Create a plot if rendering is enabled
     if rendering
-        figure(777); clf() ; 
+        figure(777); clf() ; set(gcf, 'Color', 'w');
         
         subplot(5,1,[1:4])
-        plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data)
+        plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data, x_ref, y_ref, true);
+        
         
         subplot(5,1,5)
-        plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data); axis equal
+        plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data, x_ref, y_ref, false); axis equal
         sgtitle(['Firing location for ',unit_label]);
     end
 
@@ -126,16 +134,19 @@ function out = kde(x_data, y_data, rendering, x_range, y_range, all_x_data, all_
     out = Z ;
 end
 
-function plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data)
+function plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data, x_ref, y_ref, plot_events)
     contourf(X, Y, Z, 'LineColor', 'none', 'Levels', 1e-5); hold on ;
     % Plot all data points if provided
     if nargin > 5
         scatter(all_x_data, all_y_data, 'Marker', 'o', 'MarkerFaceColor', 'w', 'MarkerFaceAlpha', 0.05, 'MarkerEdgeColor', 'none'); hold on ; % QQ: Consider setting up different styles for the scatter plot.
     end
 
-    scatter(x_data, y_data, 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'none'); hold on ;
-    xlabel('X'); ylabel('Y') ;
+    if plot_events
+        scatter(x_data, y_data, 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'none'); hold on ;
+    end
     title('2D Kernel Density Estimation') ;
-    %set(gca, 'XDir', 'reverse')
+    %set(gca, 'XDir', 'reverse');
+    xlabel(x_ref);
+    ylabel(y_ref);
     colorbar ;
 end
