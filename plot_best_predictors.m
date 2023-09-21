@@ -88,7 +88,7 @@ function plot_best_predictors(predictors, good_plus, good_minus, best_plus, best
     % Figure 664
     figure(664); clf(); hold on; set(gcf, 'color', 'w');
     createSubplots(predictors, best_plus, best_minus, observations, subset, beh_idx, ...
-                   ['Average rate for best predictor of ',  behaviour_subset{beh_idx}]);
+                   ['Firing rate for best predictor of ',  behaviour_subset{beh_idx}]);
 end
 
 function createSubplots(predictors, good_plus, good_minus, observations, subset, beh_idx, tit)
