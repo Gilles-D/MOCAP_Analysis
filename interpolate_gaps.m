@@ -95,7 +95,8 @@ function [observations] = interpolate_gaps(observations, observation_labels, pre
     end
 
     %% Find reference step variable column
-    step_ref = find(contains(observation_labels, ref_step_variable))           ; % Find column matching reference step variable
+    %step_ref = find(contains(observation_labels, ref_step_variable))           ; % Find column matching reference step variable
+    step_ref = find(strcmp(observation_labels, ref_step_variable))              ; % Find column matching exactly reference step variable
     step_ref = observations(:, step_ref)                                       ; % Extract that column
     good_step_ref = ~isnan(step_ref)                                           ; % Find non-NaN entries
     step_ref = step_ref(good_step_ref)                                         ; % Keep only non-NaN entries
