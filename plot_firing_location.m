@@ -6,8 +6,9 @@
 %
 % -------------------------------------------------------------------------
 %% Syntax:
-%   plot_firing_location(spike_times, time_axis, mouse_x, mouse_y, 
-%                        observation_labels, spike_times_labels, p)
+%   plot_firing_location(spike_times, time_axis, x_ref, y_ref, 
+%                        observation_labels, spike_times_labels, 
+%                        observations, p)
 %
 % -------------------------------------------------------------------------
 %% Inputs:
@@ -19,13 +20,13 @@
 %       A vector containing the time points at which observations were made.
 %       Must be sorted in ascending order.
 %
-%   mouse_x(VECTOR):
-%       A vector representing the x-coordinate of the mouse at each time 
-%       point in 'time_axis'.
+%   x_ref(STR):
+%       The label used to compute a vector representing the x-coordinate
+%       of the mouse at each time  point in 'time_axis'.
 %
-%   mouse_y(VECTOR):
-%       A vector representing the y-coordinate of the mouse at each time 
-%       point in 'time_axis'.
+%   y_ref(STR):
+%       The label used to compute a vector representing the y-coordinate
+%       of the mouse at each time  point in 'time_axis'.
 %
 %   observation_labels(ANY TYPE) - Optional:
 %       No implementation details are provided in the code. Placeholder for 
@@ -33,6 +34,10 @@
 %
 %   spike_times_labels(CELL ARRAY OF STRINGS) - Optional:
 %       A cell array containing labels for each neural unit in 'spike_times'.
+%
+% 	observations(Matrix):
+%   	Matrix containing behavior observations. Each row corresponds to an
+%   	observation and each column to a behavior type
 %
 %   p(SCALAR) - Optional:
 %       A scalar value specifying the pause duration in seconds between each 
@@ -56,10 +61,10 @@
 % -------------------------------------------------------------------------
 %% Examples:
 % * Plot with default pause time
-%   plot_firing_location(spike_times, time_axis, mouse_x, mouse_y);
+%   plot_firing_location(spike_times, time_axis, x_ref, y_ref);
 %
 % * Plot with a 2-second pause between each unit
-%   plot_firing_location(spike_times, time_axis, mouse_x, mouse_y, [], [], 2);
+%   plot_firing_location(spike_times, time_axis, x_ref, y_ref, [], [], 2);
 %
 % -------------------------------------------------------------------------
 %% Author(s):
@@ -80,14 +85,31 @@
 % * Implement features or debugging options for 'observation_labels'.
 % * Better handle 'spike_times_labels' for labeling plots.
 
-function plot_firing_location(spike_times, time_axis, mouse_x, mouse_y ,observation_labels, spike_times_labels, p)                   
-    if nargin < 7 || isempty(p)
+function KDEs = plot_firing_location(spike_times, time_axis, x_ref, y_ref ,observation_labels, spike_times_labels, observations, p)  
+    if nargin < 3 || isempty(x_ref)
+        x_ref = 'back1_x';
+    end
+    if nargin < 4 || isempty(y_ref)
+        y_ref = 'back1_y';
+    end
+
+    mouse_x = observations(:, find(strcmp(observation_labels, x_ref)));
+    if isempty(mouse_x)
+        mouse_x = observations(:, find(contains(observation_labels, x_ref),1));
+    end
+    mouse_y = observations(:, find(strcmp(observation_labels, y_ref)));
+    if isempty(mouse_y)
+        mouse_y = observations(:, find(contains(observation_labels, y_ref),1));
+    end
+    
+    if nargin < 8 || isempty(p)
         p = 0                           ; 
     end
     
     %% Main loop to plot the firing location of each unit
     % Loop through all units in 'spike_times'. For each unit, compute the nearest
     % indices and plot KDE (Kernel Density Estimation).
+    KDEs = {};
     for unit = 1:size(spike_times, 2)
         
         %% Data preparation for the current unit
@@ -107,8 +129,8 @@ function plot_firing_location(spike_times, time_axis, mouse_x, mouse_y ,observat
         
         %% KDE and plotting
         % Perform KDE and plot for the current unit
-        kde(mouse_x(nearest_indices), mouse_y(nearest_indices), true, [], [], ...
-            mouse_x, mouse_y, spike_times_labels{unit}) ;
+        KDEs{unit} = kde(mouse_x(nearest_indices), mouse_y(nearest_indices), true, [], [], ...
+                    mouse_x, mouse_y, spike_times_labels{unit}, x_ref, y_ref) ;
         
         %% Pause for visualization
         % Pause for 'p' seconds before plotting the next unit
