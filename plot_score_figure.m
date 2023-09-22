@@ -72,10 +72,8 @@
 % See also: 
 
 
-function [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_score_figure(score, behaviour_subset, beh_idx, good_predictors_cutoff)
+function [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_combined_scores(score, behaviour_subset, beh_idx, good_predictors_cutoff, save_path, predictor_labels,optotagged_units)
     %% Check input arguments and set defaults
-    % If good_predictors_cutoff is not provided, or is empty, set to 50.
-    % This is the default threshold for predictors
     if nargin < 4 || isempty(good_predictors_cutoff)
         good_predictors_cutoff = 50;  % Predictors with Beta values above good_predictors_cutoff ...
                                       % ... % of the max are conserved (and split between + and - weights)
@@ -85,31 +83,63 @@ function [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_score
         warning('good_predictors_cutoff is expressed in %, not in fraction. You put a value < 1, make sure this is what you want');
     end
 
-    %% Calculate mean score from input score data
+    %% Calculate mean score and standard error of the mean (SEM) from input score data
     mean_score = nanmean(score);
+    sem = nanstd(score) / sqrt(size(score, 1)); % Standard Error of the Mean
 
     %% Calculate good and best predictors based on mean score
-    % Find predictors with positive Beta values that are significant based on the cutoff
     good_plus  = find(mean_score > (max(mean_score(mean_score > 0)) * (good_predictors_cutoff / 100)));
     [~, best_plus ] = max(mean_score);  % Best predictor with positive Beta value
 
-    % Find predictors with negative Beta values that are significant based on the cutoff
     good_minus = find(mean_score < (min(mean_score(mean_score < 0)) * (good_predictors_cutoff / 100)));
     [~, best_minus] = min(mean_score);  % Best predictor with negative Beta value
 
-    %% Plot the model Beta weights
-    % Create a new figure or clear the existing one
+    %% Plot individual scores and mean score
     figure(659); clf();
-
-    % Plot individual scores and mean score
     plot(score', 'Color', [0.8, 0.8, 0.8]); hold on;
     plot(mean_score, 'k', 'LineWidth', 2);
-
-    % Style the plot
+    ylim([-1, 1]);  % Verrouiller l'échelle des ordonnées entre -1 et 1
     set(gcf, 'color', 'w'); % Set figure background to white
     set(gca, 'box', 'off'); % Remove axis box
-
-    % Label axes and add a title
     xlabel('Unit'); ylabel('Model Beta Weight');
-    sgtitle(behaviour_subset{beh_idx}); % Use behavior subset as the plot title
+    title(strrep(strrep(behaviour_subset{beh_idx}, '\', ''),'_', ' ')); % Use behavior subset as the plot title
+    xticks(1:length(predictor_labels));
+    xticklabels(predictor_labels);
+    xtickangle(45); % Rotate the labels for better visibility
+
+    % Save the figure if save_path is provided
+    if nargin >= 5 && ~isempty(save_path)
+        label = strrep(behaviour_subset{beh_idx}, '\', '');
+        saveas(gcf, fullfile(save_path, ['Score_' label '.png']));
+    end
+
+    %% Plot the mean scores as bar chart with error bars
+    optotagged_labels = strcat('Unit\_', arrayfun(@num2str, optotagged_units, 'UniformOutput', false));
+    opto_indices = find(ismember(predictor_labels, optotagged_labels));
+
+    figure(6591); clf();
+    bar(mean_score, 'FaceColor', [0.8, 0.8, 0.8]); hold on;
+    errorbar(1:length(mean_score), mean_score, sem, 'k.', 'LineWidth', 1.5);
+    ylim([-1, 1]);  % Verrouiller l'échelle des ordonnées entre -1 et 1
+
+    % Add asterisks for optotagged units
+    marker_height = mean_score(opto_indices) + sem(opto_indices) + max(sem) * 0.1; % A bit above the error bar
+    text(opto_indices, marker_height, '*', 'Color', 'b', 'HorizontalAlignment', 'center', 'VerticalAlignment', 'bottom', 'FontSize', 12);
+
+    set(gcf, 'color', 'w'); % Set figure background to white
+    set(gca, 'box', 'off'); % Remove axis box
+    xlabel('Unit'); ylabel('Model Beta Weight');
+    title(strrep(strrep(behaviour_subset{beh_idx}, '\', ''),'_', ' ')); % Use behavior subset as the plot title
+    xticks(1:length(predictor_labels));
+    xticklabels(predictor_labels);
+    xtickangle(45); % Rotate the labels for better visibility
+
+    % Save the figure if save_path is provided
+    if nargin >= 5 && ~isempty(save_path)
+        label = strrep(behaviour_subset{beh_idx}, '\', '');
+        saveas(gcf, fullfile(save_path, ['ScoreHisto_' label '.png']));
+    end
+
 end
+
+

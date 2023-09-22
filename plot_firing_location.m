@@ -85,7 +85,7 @@
 % * Implement features or debugging options for 'observation_labels'.
 % * Better handle 'spike_times_labels' for labeling plots.
 
-function KDEs = plot_firing_location(spike_times, time_axis, x_ref, y_ref ,observation_labels, spike_times_labels, observations, p)  
+function KDEs = plot_firing_location(spike_times, time_axis, x_ref, y_ref ,observation_labels, spike_times_labels, observations, p,save_path)  
     if nargin < 3 || isempty(x_ref)
         x_ref = 'back1_x';
     end
@@ -131,6 +131,14 @@ function KDEs = plot_firing_location(spike_times, time_axis, x_ref, y_ref ,obser
         % Perform KDE and plot for the current unit
         KDEs{unit} = kde(mouse_x(nearest_indices), mouse_y(nearest_indices), true, [], [], ...
                     mouse_x, mouse_y, spike_times_labels{unit}, x_ref, y_ref) ;
+                
+        %% Save
+            % Save figure
+        if ~isempty(save_path)
+            label = strrep(spike_times_labels{unit}, '\', '');
+            filename = fullfile(save_path, ['KDE_', label, '.png']);
+            saveas(gcf, filename, 'png');
+        end
         
         %% Pause for visualization
         % Pause for 'p' seconds before plotting the next unit
