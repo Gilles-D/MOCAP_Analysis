@@ -1,70 +1,70 @@
-% %% Load Excel file with behaviours and spike rates
-% data_filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\0022_01_08_Mocap_Rates_obst_raw_norm_traj.xlsx';
-% [observations, predictors, time_axis, observation_labels, predictor_labels] = load_mocap_data(data_filename);
-% 
-% %% Load Excel file with spike times
-% spike_filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\spike_times.xlsx';
-% [spike_times, spike_times_labels] = load_spike_times(spike_filename);
-% 
-% %% Quick Check for data integrity
-% if (numel(spike_times_labels) ~= numel(predictor_labels)) || ~all(ismember(spike_times_labels, predictor_labels))
-%     error('Unit list in spike times and spike rates do not match')
-% end
-% 
-% %% Get optotag infos
-% filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data/optotag_infos.xlsx';
-% optotagged_threshold = 60;
-% optotagged_units = detect_optotagged_units(filename,optotagged_threshold);
-% optotagged_labels = strcat('Unit\_', arrayfun(@num2str, optotagged_units, 'UniformOutput', false));
-% opto_indices = find(ismember(predictor_labels, optotagged_labels));
-% 
-% 
-% %% Interpolate data for small gaps based on gap duration
-% % small_gap_size_ms = 0.5;
-% % small_gap_size_tp = ceil(small_gap_size_ms / median(diff(time_axis)));
-% % for col = 1:size(observations,2)
-% %     observations(:, col) = fillmissing(observations(:, col),'pchip','EndValues', 'none','MaxGap',small_gap_size_tp);
-% % end
-% 
-% %% Remove spikes that outside the recorded behavioural data range
-% spike_times = trim_intertrial_events(time_axis, spike_times);
-% 
-% 
-% %% Fill observations gaps that span < 1/2 median step size
-% % QQ should be adjusted to compute a dynamic step size and fill gaps if
-% % less than 1/2 the current step size
-% [observations] = interpolate_gaps(observations, observation_labels, predictors, 'right_foot_x', 'back1_x');
-% 
-% %% Remove bad timepoints from observations and time axis
-% [observations, predictors, time_axis, spike_times] = ...
-%          trim_variables_for_missing_datapoints(observations, predictors, time_axis, spike_times);
-%      
-% %% Standardize data before machine learning
-% norm_obs = smoothdata(normalize(observations),'gaussian', 100);
-% norm_pred = smoothdata(normalize(predictors),'gaussian', 100);
-% 
-% % %% OPTIONAL Optotag subset
-% % norm_pred = norm_pred(:,opto_indices);
-% 
-% %% Start machine learning
-% [results, mean_score, stats, ind_scores, subset, ml_params] = run_ml_mocap(norm_pred, norm_obs, time_axis, observation_labels, '');
-% 
-% 
-% %% Get reference step cycle
-% reference_phase = get_step_cycle_phase_ref(observations, predictors, observation_labels, 'right_foot_x_norm');
+%% Load Excel file with behaviours and spike rates
+data_filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\0022_01_08_Mocap_Rates_obst_raw_norm_traj.xlsx';
+[observations, predictors, time_axis, observation_labels, predictor_labels] = load_mocap_data(data_filename);
 
-%%Get Stance state
-% ref_stance = 'right_foot_x'
-% swing_threshold = 50
-% 
-% stance_ref_idx = find(strcmp(observation_labels, ref_stance));
-% stance_ref_obs = observations(:,stance_ref_idx);
-% good_ref_obs = ~isnan(stance_ref_obs);
-% stance_ref_obs = stance_ref_obs(good_ref_obs);
-% 
-% stance_ref_speed = abs(diff(stance_ref_obs) / (1/200));
-% stance_indices = find(stance_ref_speed <= swing_threshold);
-% swing_indices = find(stance_ref_speed > swing_threshold);
+%% Load Excel file with spike times
+spike_filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\spike_times.xlsx';
+[spike_times, spike_times_labels] = load_spike_times(spike_filename);
+
+%% Quick Check for data integrity
+if (numel(spike_times_labels) ~= numel(predictor_labels)) || ~all(ismember(spike_times_labels, predictor_labels))
+    error('Unit list in spike times and spike rates do not match')
+end
+
+%% Get optotag infos
+filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data/optotag_infos.xlsx';
+optotagged_threshold = 60;
+optotagged_units = detect_optotagged_units(filename,optotagged_threshold);
+optotagged_labels = strcat('Unit\_', arrayfun(@num2str, optotagged_units, 'UniformOutput', false));
+opto_indices = find(ismember(predictor_labels, optotagged_labels));
+
+
+%% Interpolate data for small gaps based on gap duration
+% small_gap_size_ms = 0.5;
+% small_gap_size_tp = ceil(small_gap_size_ms / median(diff(time_axis)));
+% for col = 1:size(observations,2)
+%     observations(:, col) = fillmissing(observations(:, col),'pchip','EndValues', 'none','MaxGap',small_gap_size_tp);
+% end
+
+%% Remove spikes that outside the recorded behavioural data range
+spike_times = trim_intertrial_events(time_axis, spike_times);
+
+
+%% Fill observations gaps that span < 1/2 median step size
+% QQ should be adjusted to compute a dynamic step size and fill gaps if
+% less than 1/2 the current step size
+[observations] = interpolate_gaps(observations, observation_labels, predictors, 'right_foot_x', 'back1_x');
+
+%% Remove bad timepoints from observations and time axis
+[observations, predictors, time_axis, spike_times] = ...
+         trim_variables_for_missing_datapoints(observations, predictors, time_axis, spike_times);
+     
+%% Standardize data before machine learning
+norm_obs = smoothdata(normalize(observations),'gaussian', 100);
+norm_pred = smoothdata(normalize(predictors),'gaussian', 100);
+
+% %% OPTIONAL Optotag subset
+% norm_pred = norm_pred(:,opto_indices);
+
+%% Start machine learning
+[results, mean_score, stats, ind_scores, subset, ml_params] = run_ml_mocap(norm_pred, norm_obs, time_axis, observation_labels, '');
+
+
+%% Get reference step cycle
+reference_phase = get_step_cycle_phase_ref(observations, predictors, observation_labels, 'right_foot_x_norm');
+
+%Get Stance state
+ref_stance = 'right_foot_x'
+swing_threshold = 50
+
+stance_ref_idx = find(strcmp(observation_labels, ref_stance));
+stance_ref_obs = observations(:,stance_ref_idx);
+good_ref_obs = ~isnan(stance_ref_obs);
+stance_ref_obs = stance_ref_obs(good_ref_obs);
+
+stance_ref_speed = abs(diff(stance_ref_obs) / (1/200));
+stance_indices = find(stance_ref_speed <= swing_threshold);
+swing_indices = find(stance_ref_speed > swing_threshold);
 
 
 % Figure 659: Plots the scores calculated from the model's coefficients, highlighting the mean score in black. Used for tuning assessment.
