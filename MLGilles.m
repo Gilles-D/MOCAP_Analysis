@@ -67,6 +67,8 @@ stance_indices = find(stance_ref_speed <= swing_threshold);
 swing_indices = find(stance_ref_speed > swing_threshold);
 
 
+% plot_angles_by_phase(observations(:,51),reference_phase);
+
 % Figure 659: Plots the scores calculated from the model's coefficients, highlighting the mean score in black. Used for tuning assessment.
 % Figure 663: Shows the mean of the predictors and observations for positively correlated neurons.
 % Figure 664: Plots the predictors from the best positively and negatively correlated neurons.
