@@ -101,7 +101,11 @@ function createSubplots(predictors, good_plus, good_minus, observations, subset,
     
     % Subplot 311
     subplot(311); 
-    plot(mean(predictors(:, good_plus), 2), 'g'); 
+    if all(good_plus <= size(predictors, 2))
+        plot(mean(predictors(:, good_plus), 2), 'g');
+    else
+        error('Index in good_plus exceeds the number of columns in predictors.');
+    end 
     set(gca, 'box', 'off'); 
     ylabel('F. rate  (+ \beta)');  % Explanatory comment
     
