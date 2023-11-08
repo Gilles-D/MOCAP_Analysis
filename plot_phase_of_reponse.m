@@ -82,8 +82,11 @@
 % 	20-09-202
 
 
-function [mean_angle_unweighted_deg, mean_magnitude, beh_phase, n_events] = plot_phase_of_reponse(obs, pred, title_label, rendering, ref_phase, time, save_path,unit_label)
+function [mean_angle, mean_magnitude, beh_phase, n_events] = plot_phase_of_reponse(obs, pred, title_label, rendering, ref_phase, time, save_path,unit_label)
     % Initialize defaults
+    mean_angle = NaN; % Set default values in case they are not assigned later
+    mean_magnitude = NaN; % Set default values in case they are not assigned later
+
     if nargin < 6 || isempty(time)
         time = 1:numel(obs);
     end
@@ -109,14 +112,41 @@ function [mean_angle_unweighted_deg, mean_magnitude, beh_phase, n_events] = plot
     end
 
     mean_angle_unweighted_deg = calculateMeanAngle(angles, pred);
+    
+    mean_angle = rad2deg(mean_angle);
 end
 
-% Calculate mean angle
+% % Calculate mean angle
+% function mean_angle_unweighted_deg = calculateMeanAngle(angles, pred)
+%     mean_angle_unweighted = atan2(sum(sin(angles)) / length(angles), ...
+%                                   sum(cos(angles)) / length(angles));
+%     mean_angle_unweighted_deg = rad2deg(mean_angle_unweighted);
+% end
+
+
+% Calculate mean angle with event weights
 function mean_angle_unweighted_deg = calculateMeanAngle(angles, pred)
-    mean_angle_unweighted = atan2(sum(sin(angles)) / length(angles), ...
-                                  sum(cos(angles)) / length(angles));
+    % Vérifiez si pred est un vecteur de temps d'événements ou une série continue
+    if all(sign(diff(pred(~isnan(pred)))) >= 0)
+        % 'pred' est un vecteur de temps d'événements, utilisez des poids de 1
+        weights = ones(size(angles));
+    else
+        % 'pred' est une série continue, utilisez 'pred' comme poids
+        weights = pred;
+    end
+
+    % Calculez le vecteur moyen en utilisant des poids
+    mean_vector_x = sum(weights .* cosd(angles)) / sum(weights);
+    mean_vector_y = sum(weights .* sind(angles)) / sum(weights);
+    mean_angle_unweighted = atan2(mean_vector_y, mean_vector_x);
     mean_angle_unweighted_deg = rad2deg(mean_angle_unweighted);
 end
+
+
+
+
+
+
 
 % Process spike times and plot the polar histogram
 function [mean_magnitude, mean_angle, n_events] = processSpikeTimes(pred, ref_phase, time, title_label, rendering,save_path,unit_label)
@@ -184,8 +214,8 @@ function [mean_magnitude, mean_angle] = plotPolarHistogram(spike_phases, title_l
     % Save figure
     if ~isempty(save_path)
         label = strrep(unit_label, '\', '');
-        filename = fullfile(save_path, ['PolarHistogram_', label, '.png']);
-        saveas(gcf, filename, 'png');
+        filename = fullfile(save_path, ['PolarHistogram_', label, '.svg']);
+        saveas(gcf, filename, 'svg');
     end
 end
 
@@ -209,6 +239,6 @@ function mean_length = plotPolarPlot(angles, pred, title_label,save_path,unit_la
     if ~isempty(save_path)
         label = strrep(unit_label, '\', '');
         filename = fullfile(save_path, ['PolarPlot_', label, '.png']);
-        saveas(gcf, filename, 'png');
+        saveas(gcf, filename, 'svg');
     end
 end
