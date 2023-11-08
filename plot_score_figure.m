@@ -72,7 +72,7 @@
 % See also: 
 
 
-function [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_combined_scores(score, behaviour_subset, beh_idx, good_predictors_cutoff, save_path, predictor_labels,optotagged_units)
+function [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_score_figure(score, behaviour_subset, beh_idx, good_predictors_cutoff, save_path, predictor_labels,optotagged_units)
     %% Check input arguments and set defaults
     if nargin < 4 || isempty(good_predictors_cutoff)
         good_predictors_cutoff = 50;  % Predictors with Beta values above good_predictors_cutoff ...
@@ -110,7 +110,7 @@ function [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_combi
     % Save the figure if save_path is provided
     if nargin >= 5 && ~isempty(save_path)
         label = strrep(behaviour_subset{beh_idx}, '\', '');
-        saveas(gcf, fullfile(save_path, ['Score_' label '.png']));
+        saveas(gcf, fullfile(save_path, ['Score_' label '.svg']));
     end
 
     %% Plot the mean scores as bar chart with error bars
@@ -137,7 +137,7 @@ function [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_combi
     % Save the figure if save_path is provided
     if nargin >= 5 && ~isempty(save_path)
         label = strrep(behaviour_subset{beh_idx}, '\', '');
-        saveas(gcf, fullfile(save_path, ['ScoreHisto_' label '.png']));
+        saveas(gcf, fullfile(save_path, ['ScoreHisto_' label '.svg']));
     end
 
 end

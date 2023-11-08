@@ -1,5 +1,5 @@
 %% Load Excel file with behaviours and spike rates
-data_filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\0022_01_08_Mocap_Rates_obst_raw_norm_traj.xlsx';
+data_filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\0022_01_08_Mocap_Rates_catwalk_orm_traj.xlsx';
 [observations, predictors, time_axis, observation_labels, predictor_labels] = load_mocap_data(data_filename);
 
 %% Load Excel file with spike times
@@ -12,12 +12,23 @@ if (numel(spike_times_labels) ~= numel(predictor_labels)) || ~all(ismember(spike
 end
 
 %% Get optotag infos
-filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data/optotag_infos.xlsx';
-optotagged_threshold = 60;
-optotagged_units = detect_optotagged_units(filename,optotagged_threshold);
-optotagged_labels = strcat('Unit\_', arrayfun(@num2str, optotagged_units, 'UniformOutput', false));
-opto_indices = find(ismember(predictor_labels, optotagged_labels));
+% filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data/optotag_infos.xlsx';
+% optotagged_threshold = 60;
+% optotagged_units = detect_optotagged_units(filename,optotagged_threshold);
+% optotagged_labels = strcat('Unit\_', arrayfun(@num2str, optotagged_units, 'UniformOutput', false));
+% opto_indices = find(ismember(predictor_labels, optotagged_labels));
 
+% Chemin du fichier Excel (sur un serveur NAS ou un chemin local)
+filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\optotag_infos_fit.xlsx';
+% Seuils pour le Zscore et le pourcentage de succès
+zscore_threshold = 5;
+success_rate_threshold = 5;
+% Obtenez les unités optotaggées qui satisfont à la fois le Zscore et le pourcentage de succès
+optotagged_units = detect_optotagged_units(filename, zscore_threshold, success_rate_threshold);
+% Créer des labels pour les unités optotaggées
+optotagged_labels = strcat('Unit\_', arrayfun(@num2str, optotagged_units, 'UniformOutput', false));
+% Trouver les indices des unités optotaggées dans la liste des labels de prédicteurs
+opto_indices = find(ismember(predictor_labels, optotagged_labels));
 
 %% Interpolate data for small gaps based on gap duration
 % small_gap_size_ms = 0.5;
@@ -67,7 +78,55 @@ stance_indices = find(stance_ref_speed <= swing_threshold);
 swing_indices = find(stance_ref_speed > swing_threshold);
 
 
-% plot_angles_by_phase(observations(:,49),reference_phase);
+
+
+
+
+
+% % Supposons que 'observations' est votre array
+% % Sélectionnez les 100 premières lignes de la colonne 14 pour l'axe des x
+% %x = observations(1:1300, 13);
+% x = rad2deg(reference_phase(1:1300));
+% 
+% % Sélectionnez les 100 premières lignes de la colonne 15 pour l'axe des y
+% y = observations(1:1300, 65);
+% 
+% % Créez un graphique avec les données sélectionnées
+% plot(x, y, 'o'); % Utilisez 'o' pour un scatter plot ou '-' pour une ligne
+% 
+% % Ajoutez des étiquettes et un titre
+% xlabel('Colonne 14');
+% ylabel('Colonne 15');
+% title('Graphique des 100 premières lignes de la Colonne 15 en fonction de la Colonne 14');
+% 
+% % Affichez la grille
+% grid on;
+% 
+% 
+% idx = stance_indices(1:50);
+% 
+% % Continuez à partir de votre graphique existant...
+% hold on; % Maintenez le graphique actuel pour ajouter des éléments
+% for i = 1:length(idx)
+%     % Récupérez la valeur de X correspondante à l'indice courant
+%     swing_value_x = observations(idx(i), 13);
+%     % Tracez une ligne verticale à cet emplacement X
+%     xline(swing_value_x, 'r', 'LineWidth', 1.5);
+% end
+% hold off; % Relâchez le graphique
+
+
+
+
+
+
+
+
+
+
+
+
+%plot_angles_by_phase(observations(:,52),reference_phase);
 
 % Figure 659: Plots the scores calculated from the model's coefficients, highlighting the mean score in black. Used for tuning assessment.
 % Figure 663: Shows the mean of the predictors and observations for positively correlated neurons.
@@ -81,7 +140,14 @@ swing_indices = find(stance_ref_speed > swing_threshold);
 behaviour_subset = observation_labels(subset);
 sm_pred = smoothdata(predictors, 'gaussian', 100);
 
-save_path = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\phaseresponse\'
+save_path = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\phaseresponse_new\'
+
+status = mkdir(save_path);
+if status == 1
+    disp('Dossier créé avec succès.');
+else
+    disp('La création du dossier a échoué.');
+end
 
 single_unit_rendering = true;
 [mean_angle, mean_magnitudes, n_events] = deal([]);        
@@ -89,8 +155,56 @@ for unit = 1:size(predictors, 2)
     [mean_angle(unit), mean_magnitudes(unit), ~, n_events(unit)] = plot_phase_of_reponse(observations(:, subset(1)), spike_times(:,unit), ['tuning for ',spike_times_labels{unit}], single_unit_rendering, reference_phase, time_axis,save_path,spike_times_labels{unit});
 end
 
-%%
-save_path_scores = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\scores';
+% Nom du fichier Excel à sauvegarder
+filename = 'mean_magnitudes.xlsx';
+
+% Chemin complet du fichier Excel
+full_excel_path = fullfile(save_path, filename);
+
+% Sauvegarde de l'array mean_angle dans un fichier Excel
+writematrix(mean_magnitudes, full_excel_path);
+
+% Nom du fichier Excel à sauvegarder
+filename = 'mean_angle.xlsx';
+
+% Chemin complet du fichier Excel
+full_excel_path = fullfile(save_path, filename);
+
+% Sauvegarde de l'array mean_angle dans un fichier Excel
+writematrix(mean_angle, full_excel_path);
+
+
+% Assurez-vous que predictor_labels est un tableau de chaînes
+% Si ce n'est pas le cas, convertissez-le comme suit:
+% predictor_labels = string(predictor_labels);
+
+% Initialisation du tableau de cellules avec des labels sur la première ligne
+data_cell = [predictor_labels; num2cell(mean_angle); num2cell(mean_magnitudes)];
+
+% Nom du fichier Excel à sauvegarder
+filename = 'units_data.xlsx';
+
+% Chemin complet du fichier Excel
+full_excel_path = fullfile(save_path, filename);
+
+% Sauvegarde du tableau de cellules dans un fichier Excel
+writecell(data_cell, full_excel_path);
+
+
+
+
+
+%% ML model scores
+save_path_scores = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\scores_new';
+
+status = mkdir(save_path_scores);
+
+if status == 1
+    disp('Dossier créé avec succès.');
+else
+    disp('La création du dossier a échoué.');
+end
+
 
 for beh_idx = 1:numel(behaviour_subset)
     if contains(behaviour_subset{beh_idx}, '')
@@ -104,7 +218,7 @@ for beh_idx = 1:numel(behaviour_subset)
             end
         end
         
-        [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_score_figure(score, behaviour_subset, beh_idx, 50,save_path_scores,predictor_labels,optotagged_units);
+        [good_plus, best_plus, good_minus, best_minus, mean_score] = plot_score_figure(score(:, 2:end), behaviour_subset, beh_idx, 50,save_path_scores,predictor_labels,optotagged_units);
 
         plot_best_predictors(predictors, good_plus, good_minus, best_plus, best_minus, observations, subset, beh_idx, behaviour_subset);
         plot_rate_vs_behaviour(observations, subset, beh_idx, behaviour_subset, predictors, good_plus, good_minus);
@@ -116,9 +230,18 @@ end
 
 
 %% Get reference step cycle   
-x_ref = 'right_foot_x';
-y_ref = 'distance_from_obstacle_x';
-save_path_KDE = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\KDE'
+x_ref = 'right_foot_x_norm';
+y_ref = 'right_foot_z_norm';
+save_path_KDE = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\KDE_new'
+
+status = mkdir(save_path_KDE);
+
+if status == 1
+    disp('Dossier créé avec succès.');
+else
+    disp('La création du dossier a échoué.');
+end
+
 KDEs = plot_firing_location(spike_times, time_axis, x_ref, y_ref, observation_labels, spike_times_labels, observations, 1,save_path_KDE);
 %%
 

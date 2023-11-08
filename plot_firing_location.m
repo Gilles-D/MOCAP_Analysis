@@ -136,8 +136,8 @@ function KDEs = plot_firing_location(spike_times, time_axis, x_ref, y_ref ,obser
             % Save figure
         if ~isempty(save_path)
             label = strrep(spike_times_labels{unit}, '\', '');
-            filename = fullfile(save_path, ['KDE_', label, '.png']);
-            saveas(gcf, filename, 'png');
+            filename = fullfile(save_path, ['KDE_', label, '.svg']);
+            saveas(gcf, filename, 'svg');
         end
         
         %% Pause for visualization
