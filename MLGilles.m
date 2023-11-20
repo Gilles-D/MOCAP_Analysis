@@ -1,5 +1,5 @@
 %% Load Excel file with behaviours and spike rates
-data_filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\0022_01_08_Mocap_Rates_catwalk_orm_traj.xlsx';
+data_filename = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\0022_01_08_Mocap_Rates_obst_norm_traj.xlsx';
 [observations, predictors, time_axis, observation_labels, predictor_labels] = load_mocap_data(data_filename);
 
 %% Load Excel file with spike times
@@ -62,7 +62,7 @@ norm_pred = smoothdata(normalize(predictors),'gaussian', 100);
 
 
 %% Get reference step cycle
-reference_phase = get_step_cycle_phase_ref(observations, predictors, observation_labels, 'right_foot_x_norm');
+reference_phase = get_step_cycle_phase_ref(observations, predictors, observation_labels, 'right_foot_x');
 
 %Get Stance state
 ref_stance = 'right_foot_x'
@@ -83,37 +83,37 @@ swing_indices = find(stance_ref_speed > swing_threshold);
 
 
 
-% % Supposons que 'observations' est votre array
-% % Sélectionnez les 100 premières lignes de la colonne 14 pour l'axe des x
-% %x = observations(1:1300, 13);
-% x = rad2deg(reference_phase(1:1300));
-% 
-% % Sélectionnez les 100 premières lignes de la colonne 15 pour l'axe des y
-% y = observations(1:1300, 65);
-% 
-% % Créez un graphique avec les données sélectionnées
-% plot(x, y, 'o'); % Utilisez 'o' pour un scatter plot ou '-' pour une ligne
-% 
-% % Ajoutez des étiquettes et un titre
-% xlabel('Colonne 14');
-% ylabel('Colonne 15');
-% title('Graphique des 100 premières lignes de la Colonne 15 en fonction de la Colonne 14');
-% 
-% % Affichez la grille
-% grid on;
-% 
-% 
-% idx = stance_indices(1:50);
-% 
-% % Continuez à partir de votre graphique existant...
-% hold on; % Maintenez le graphique actuel pour ajouter des éléments
-% for i = 1:length(idx)
-%     % Récupérez la valeur de X correspondante à l'indice courant
-%     swing_value_x = observations(idx(i), 13);
-%     % Tracez une ligne verticale à cet emplacement X
-%     xline(swing_value_x, 'r', 'LineWidth', 1.5);
-% end
-% hold off; % Relâchez le graphique
+% Supposons que 'observations' est votre array
+% Sélectionnez les 100 premières lignes de la colonne 14 pour l'axe des x
+x = observations(1:1300, 2);
+%x = rad2deg(reference_phase(1:1300));
+
+% Sélectionnez les 100 premières lignes de la colonne 15 pour l'axe des y
+y = observations(1:1300, 17);
+
+% Créez un graphique avec les données sélectionnées
+plot(x, y, 'o'); % Utilisez 'o' pour un scatter plot ou '-' pour une ligne
+
+% Ajoutez des étiquettes et un titre
+xlabel('Colonne 14');
+ylabel('Colonne 15');
+title('Graphique des 100 premières lignes de la Colonne 15 en fonction de la Colonne 14');
+
+% Affichez la grille
+grid on;
+
+
+idx = stance_indices(1:150);
+
+% Continuez à partir de votre graphique existant...
+hold on; % Maintenez le graphique actuel pour ajouter des éléments
+for i = 1:length(idx)
+    % Récupérez la valeur de X correspondante à l'indice courant
+    swing_value_x = observations(idx(i), 2);
+    % Tracez une ligne verticale à cet emplacement X
+    xline(swing_value_x, 'r', 'LineWidth', 1.5);
+end
+hold off; % Relâchez le graphique
 
 
 
@@ -140,7 +140,7 @@ swing_indices = find(stance_ref_speed > swing_threshold);
 behaviour_subset = observation_labels(subset);
 sm_pred = smoothdata(predictors, 'gaussian', 100);
 
-save_path = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\phaseresponse_new\'
+save_path = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\phaseresponse_obstv2\'
 
 status = mkdir(save_path);
 if status == 1
@@ -150,9 +150,14 @@ else
 end
 
 single_unit_rendering = true;
-[mean_angle, mean_magnitudes, n_events] = deal([]);        
+[mean_angle, mean_magnitudes, n_events] = deal([]);       
+
+% Assuming 'predictors' is already defined and has the correct size
+spike_phases = cell(1, size(predictors, 2));
+
 for unit = 1:size(predictors, 2)
-    [mean_angle(unit), mean_magnitudes(unit), ~, n_events(unit)] = plot_phase_of_reponse(observations(:, subset(1)), spike_times(:,unit), ['tuning for ',spike_times_labels{unit}], single_unit_rendering, reference_phase, time_axis,save_path,spike_times_labels{unit});
+    [mean_angle(unit), mean_magnitudes(unit), ~, n_events(unit),spike_phases{unit}] = plot_phase_of_reponse(observations(:, subset(1)), spike_times(:,unit), ['tuning for ',spike_times_labels{unit}], single_unit_rendering, reference_phase, time_axis,save_path,spike_times_labels{unit});
+    
 end
 
 % Nom du fichier Excel à sauvegarder
@@ -190,12 +195,18 @@ full_excel_path = fullfile(save_path, filename);
 % Sauvegarde du tableau de cellules dans un fichier Excel
 writecell(data_cell, full_excel_path);
 
-
+% Assuming spike_phases is a cell array of data and predictor_labels is a cell array of strings.
+for i = 1:length(spike_phases)
+    label = strrep(predictor_labels{i}, '\_', '_');
+    filename = sprintf('0026_02_08_spike_phases_unit_%s.xlsx', label);
+    full_path = fullfile(save_path, filename);
+    writematrix(spike_phases{i}, full_path);
+end
 
 
 
 %% ML model scores
-save_path_scores = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\scores_new';
+save_path_scores = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\scores_obstv2';
 
 status = mkdir(save_path_scores);
 
@@ -230,9 +241,9 @@ end
 
 
 %% Get reference step cycle   
-x_ref = 'right_foot_x_norm';
-y_ref = 'right_foot_z_norm';
-save_path_KDE = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\KDE_new'
+x_ref = 'distance_from_obstacle_x';
+y_ref = 'right_foot_x';
+save_path_KDE = '\\equipe2-nas1\Public\DATA\Gilles\Spikesorting_August_2023\SI_Data\spikesorting_results\0022_01_08\kilosort3\curated\processing_data\plots\KDE_obstv2'
 
 status = mkdir(save_path_KDE);
 
