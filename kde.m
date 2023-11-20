@@ -125,9 +125,9 @@ function out = kde(x_data, y_data, rendering, x_range, y_range, all_x_data, all_
         plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data, x_ref, y_ref, true);
         
         
-        subplot(5,1,5)
-        plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data, x_ref, y_ref, false); axis equal
-        sgtitle(['Firing location for ',unit_label]);
+%         subplot(5,1,5)
+%         plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data, x_ref, y_ref, false); axis equal
+%         sgtitle(['Firing location for ',unit_label]);
     end
 
     %% Output the KDE density matrix
@@ -138,11 +138,11 @@ function plot_fig(X,Y,Z,x_data,y_data,all_x_data,all_y_data, x_ref, y_ref, plot_
     contourf(X, Y, Z, 'LineColor', 'none', 'Levels', 1e-5); hold on ;
     % Plot all data points if provided
     if nargin > 5
-        scatter(all_x_data, all_y_data, 'Marker', 'o', 'MarkerFaceColor', 'w', 'MarkerFaceAlpha', 0.05, 'MarkerEdgeColor', 'none'); hold on ; % QQ: Consider setting up different styles for the scatter plot.
+%         scatter(all_x_data, all_y_data, 'Marker', 'o', 'MarkerFaceColor', 'w', 'MarkerFaceAlpha', 0.05, 'MarkerEdgeColor', 'none'); hold on ; % QQ: Consider setting up different styles for the scatter plot.
     end
 
     if plot_events
-        scatter(x_data, y_data, 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'none'); hold on ;
+        scatter(x_data, y_data, 'MarkerFaceColor', 'r', 'MarkerEdgeColor', 'r', 'MarkerFaceAlpha', 0.5, 'MarkerEdgeAlpha', 0.5); hold on ;
     end
     title('2D Kernel Density Estimation') ;
     %set(gca, 'XDir', 'reverse');
