@@ -82,7 +82,7 @@
 % 	20-09-202
 
 
-function [mean_angle, mean_magnitude, beh_phase, n_events] = plot_phase_of_reponse(obs, pred, title_label, rendering, ref_phase, time, save_path,unit_label)
+function [mean_angle, mean_magnitude, beh_phase, n_events,spike_phases] = plot_phase_of_reponse(obs, pred, title_label, rendering, ref_phase, time, save_path,unit_label)
     % Initialize defaults
     mean_angle = NaN; % Set default values in case they are not assigned later
     mean_magnitude = NaN; % Set default values in case they are not assigned later
@@ -106,7 +106,7 @@ function [mean_angle, mean_magnitude, beh_phase, n_events] = plot_phase_of_repon
     angles = rad2deg(beh_phase);
     
     if all(sign(diff(pred(~isnan(pred)))) >= 0)
-        [mean_magnitude, mean_angle, n_events] = processSpikeTimes(pred, beh_phase, time, title_label, rendering, save_path,unit_label);
+        [mean_magnitude, mean_angle, n_events,spike_phases] = processSpikeTimes(pred, beh_phase, time, title_label, rendering, save_path,unit_label);
     else
         mean_magnitude = processSignalPeaks(pred, angles, title_label, rendering);
     end
@@ -149,7 +149,7 @@ end
 
 
 % Process spike times and plot the polar histogram
-function [mean_magnitude, mean_angle, n_events] = processSpikeTimes(pred, ref_phase, time, title_label, rendering,save_path,unit_label)
+function [mean_magnitude, mean_angle, n_events,spike_phases] = processSpikeTimes(pred, ref_phase, time, title_label, rendering,save_path,unit_label)
     spike_times         = pred(1:find(~isnan(pred), 1, 'last'));
     nearest_indices     = nearestIndices(time, spike_times);
     n_events            = numel(nearest_indices);
